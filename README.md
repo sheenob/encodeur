@@ -35,8 +35,8 @@ git clone https://github.com/sheenob/encodeur.git
 ###########################    GUIDE UTILISATION     ###########################
 
 # Lancer le script
-cargo run
 
+-> cargo run
 
 # Liste des algorithmes disponibles
 
