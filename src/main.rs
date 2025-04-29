@@ -1,63 +1,46 @@
-use clap::{Parser, Subcommand};
+mod algorithms;
+mod types;
 
-/// Simple encodeur/décodeur César
+use clap::Parser;
+use algorithms::*;
+use types::{Algo, Mode};
+
 #[derive(Parser)]
 #[command(name = "encodeur")]
-#[command(about = "Encode ou décode un message avec le chiffrement César", long_about = None)]
+#[command(about = "Encodeur/Décodeur multi-algorithmes en Rust", long_about = None)]
 struct Cli {
-    #[command(subcommand)]
-    command: Commands,
-}
+    /// Texte à encoder ou décoder
+    #[arg(short, long)]
+    text: String,
 
-#[derive(Subcommand)]
-enum Commands {
-    /// Encode un message
-    Encode {
-        /// Texte à encoder
-        #[arg(short, long)]
-        text: String,
+    /// Algorithme utilisé (cesar, rot13, base64, hex, atbash)
+    #[arg(short, long, value_enum)]
+    algo: Algo,
 
-        /// Clé de décalage (ex: 3)
-        #[arg(short, long, default_value_t = 3)]
-        key: u8,
-    },
-    /// Décode un message
-    Decode {
-        /// Texte à décoder
-        #[arg(short, long)]
-        text: String,
+    /// Mode : encode ou decode
+    #[arg(short, long, value_enum)]
+    mode: Mode,
 
-        /// Clé de décalage (ex: 3)
-        #[arg(short, long, default_value_t = 3)]
-        key: u8,
-    },
-}
-
-fn caesar_cipher(text: &str, key: u8, encode: bool) -> String {
-    text.chars()
-        .map(|c| {
-            if c.is_ascii_alphabetic() {
-                let first = if c.is_ascii_uppercase() { b'A' } else { b'a' };
-                let offset = if encode { key } else { 26 - key };
-                (((c as u8 - first + offset) % 26) + first) as char
-            } else {
-                c
-            }
-        })
-        .collect()
+    /// Clé pour le chiffrement César (optionnel)
+    #[arg(short, long, default_value_t = 3)]
+    key: u8,
 }
 
 fn main() {
     let cli = Cli::parse();
 
-    match cli.command {
-        Commands::Encode { text, key } => {
-            let result = caesar_cipher(&text, key, true);
-            println!("Texte encodé: {}", result);
-        }
-        Commands::Decode { text, key } => {
-            let result = caesar_cipher(&text, key, false);
-            println!("Texte décodé: {}", result);
-        }
-    }
+    let result = match (cli.mode, cli.algo) {
+        (Mode::Encode, Algo::Cesar) => caesar_encode(&cli.text, cli.key),
+        (Mode::Decode, Algo::Cesar) => caesar_decode(&cli.text, cli.key),
+        (Mode::Encode, Algo::Rot13) => rot13_encode(&cli.text),
+        (Mode::Decode, Algo::Rot13) => rot13_decode(&cli.text),
+        (Mode::Encode, Algo::Base64) => base64_encode(&cli.text),
+        (Mode::Decode, Algo::Base64) => base64_decode(&cli.text),
+        (Mode::Encode, Algo::Hex) => hex_encode(&cli.text),
+        (Mode::Decode, Algo::Hex) => hex_decode(&cli.text),
+        (Mode::Encode, Algo::Atbash) => atbash_encode(&cli.text),
+        (Mode::Decode, Algo::Atbash) => atbash_decode(&cli.text),
+    };
+
+    println!("Résultat : {}", result);
 }
