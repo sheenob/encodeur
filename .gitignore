@@ -1,0 +1,20 @@
+# Cible de compilation
+/target/
+
+# Fichiers de logs Cargo
+**/*.rs.bk
+Cargo.lock
+
+# Fichiers temporaires d'éditeurs
+*.swp
+*.swo
+*.tmp
+
+# Fichiers de VS Code
+.vscode/
+
+# Mac OS
+.DS_Store
+
+# Windows
+Thumbs.db
