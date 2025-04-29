@@ -20,3 +20,11 @@ pub enum Mode {
     Encode,
     Decode,
 }
+
+/// Source d'entrée : texte manuel ou fichier
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub enum SourceType {
+    Manual,
+    File,
+}
+

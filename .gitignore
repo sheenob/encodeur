@@ -1,6 +1,10 @@
 # Cible de compilation
 /target/
 
+# Fichiers à chiffrer
+/file_output/
+/file_input/
+
 # Fichiers de logs Cargo
 **/*.rs.bk
 Cargo.lock
