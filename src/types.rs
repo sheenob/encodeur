@@ -8,6 +8,10 @@ pub enum Algo {
     Base64,
     Hex,
     Atbash,
+    Xor,
+    Reverse,
+    Binary,
+    Base32,
 }
 
 /// Mode d'utilisation : encoder ou décoder.

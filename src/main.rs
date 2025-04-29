@@ -40,6 +40,15 @@ fn main() {
         (Mode::Decode, Algo::Hex) => hex_decode(&cli.text),
         (Mode::Encode, Algo::Atbash) => atbash_encode(&cli.text),
         (Mode::Decode, Algo::Atbash) => atbash_decode(&cli.text),
+        (Mode::Encode, Algo::Xor) => xor_encode(&cli.text, cli.key),
+        (Mode::Decode, Algo::Xor) => xor_decode(&cli.text, cli.key),
+        (Mode::Encode, Algo::Reverse) => reverse_encode(&cli.text),
+        (Mode::Decode, Algo::Reverse) => reverse_decode(&cli.text),
+        (Mode::Encode, Algo::Binary) => binary_encode(&cli.text),
+        (Mode::Decode, Algo::Binary) => binary_decode(&cli.text),
+        (Mode::Encode, Algo::Base32) => base32_encode(&cli.text),
+        (Mode::Decode, Algo::Base32) => base32_decode(&cli.text),
+
     };
 
     println!("Résultat : {}", result);
