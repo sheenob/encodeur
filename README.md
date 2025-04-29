@@ -44,10 +44,10 @@ cargo run
 
     - caesar   | Oui (ex: 4)        | Chiffrement par décalage
     - rot13    | Non                | Déviation fixe de 13 lettres
-    - base64   | Non                | Encodage standard ASCII ↔ Binaire
+    - base64   | Non                | Encodage standard ASCII ↔ Base64
     - hex      | Non                | Encodage texte → hexadécimal
     - atbash   | Non                | Inversion alphabétique
     - xor      | Oui (clé numérique)| XOR bit à bit
     - reverse  | Non                | Inverser le texte
     - binary   | Non                | Texte -> 0 et 1
-    - base32   | Non                | Encodage base32 (RFC 4648)
+    - base32   | Non                | Encodage standard ASCII ↔ Base32
