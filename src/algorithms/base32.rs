@@ -12,6 +12,6 @@ pub fn decode(text: &str) -> String {
             Ok(s) => s,
             Err(_) => "Erreur : données Base32 invalides.".to_string(),
         },
-        None => "Erreur : texte Base32 invalide.".to_string(),
+        _none => "Erreur : texte Base32 invalide.".to_string(),
     }
 }
