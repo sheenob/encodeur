@@ -67,7 +67,10 @@ fn lancer_encodage_ou_decodage(mode: Mode) {
         }
     };
 
-    println!("\nRésultat : {}\n", result);
+    if is_binary || matches!(source_type, SourceType::File) {
+        println!("\nRésultat : {}\n", result);
+    }
+
     if let SourceType::File = source_type {
         let output_path = ask_output_file_path();
         if let Err(e) = fs::write(&output_path, result) {
