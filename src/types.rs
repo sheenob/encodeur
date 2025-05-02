@@ -29,3 +29,8 @@ pub enum SourceType {
     File,
 }
 
+/// Représente une étape d'encodage avec un algorithme et ses paramètres
+pub struct MultiEncode {
+    pub algo: Algo,
+    pub param: Option<String>,
+}

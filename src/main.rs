@@ -4,32 +4,36 @@ use std::io::{self, Write};
 mod algorithms;
 mod types;
 use algorithms::*;
-use types::{Algo, Mode, SourceType};
+use types::{Algo, Mode, SourceType, MultiEncode};
 
 fn main() {
     println!("===== Encodeur/Décodeur Rust =====\n");
+    println!("1) Encodage simple");
+    println!("2) Décodage simple");
+    println!("3) Encodage pipeline personnalisé");
+    print!("Choisissez une option : ");
+    io::stdout().flush().unwrap();
 
-    let mode = ask_mode();
+    let mut choix = String::new();
+    io::stdin().read_line(&mut choix).unwrap();
+
+    match choix.trim() {
+        "1" => lancer_encodage_ou_decodage(Mode::Encode),
+        "2" => lancer_encodage_ou_decodage(Mode::Decode),
+        "3" => lancer_pipeline(),
+        _ => println!("Option invalide."),
+    }
+}
+
+fn lancer_encodage_ou_decodage(mode: Mode) {
     let algo = ask_algorithm();
     let source_type = ask_source_type();
-    let input_text = match source_type {
-        SourceType::Manual => ask_text(),
-        SourceType::File => {
-            let file_path = ask_file_path();
-            match fs::read_to_string(&file_path) {
-                Ok(content) => content.trim().to_string(),
-                Err(_) => {
-                    println!("Erreur lors de la lecture du fichier.");
-                    return;
-                }
-            }
-        }
-    };
+    let input_text = get_input_text(&source_type);
 
     let key = if matches!(algo, Algo::Cesar | Algo::Xor) {
         ask_key()
     } else {
-        3 // clé par défaut pour les autres algos
+        3
     };
 
     let result = match (mode, algo) {
@@ -51,7 +55,6 @@ fn main() {
         (Mode::Decode, Algo::Binary) => binary_decode(&input_text),
         (Mode::Encode, Algo::Base32) => base32_encode(&input_text),
         (Mode::Decode, Algo::Base32) => base32_decode(&input_text),
-
         (Mode::Encode, Algo::Vigenere) => {
             let keyword = ask_keyword();
             vigenere_encode(&input_text, &keyword)
@@ -60,11 +63,9 @@ fn main() {
             let keyword = ask_keyword();
             vigenere_decode(&input_text, &keyword)
         }
-        
     };
 
     println!("\nRésultat : {}\n", result);
-
     if let SourceType::File = source_type {
         let output_path = ask_output_file_path();
         if let Err(e) = fs::write(&output_path, result) {
@@ -75,25 +76,19 @@ fn main() {
     }
 }
 
-// ------------------------------------------------------------
-// FONCTIONS UTILES
-// ------------------------------------------------------------
+fn lancer_pipeline() {
+    let pipeline = build_pipeline();
+    let source_type = ask_source_type();
+    let input_text = get_input_text(&source_type);
+    let result = apply_pipeline(&pipeline, &input_text);
 
-
-
-fn ask_mode() -> Mode {
-    println!("1) Encoder\n2) Décoder");
-    print!("Choisissez une option (1 ou 2) : ");
-    io::stdout().flush().unwrap();
-
-    let mut input = String::new();
-    io::stdin().read_line(&mut input).unwrap();
-    match input.trim() {
-        "1" => Mode::Encode,
-        "2" => Mode::Decode,
-        _ => {
-            println!("Entrée invalide, défaut sur Encode.");
-            Mode::Encode
+    println!("\nRésultat :\n{}", result);
+    if let SourceType::File = source_type {
+        let output_path = ask_output_file_path();
+        if let Err(e) = fs::write(&output_path, result) {
+            println!("Erreur lors de l'écriture du fichier : {}", e);
+        } else {
+            println!("Résultat sauvegardé dans {}", output_path);
         }
     }
 }
@@ -201,6 +196,75 @@ fn ask_key() -> u8 {
     }
 }
 
+fn build_pipeline() -> Vec<MultiEncode> {
+    print!("\nCombien d'étapes souhaitez-vous dans le pipeline ? ");
+    io::stdout().flush().unwrap();
+
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).unwrap();
+    let num_steps: usize = input.trim().parse().unwrap_or(1);
+
+    let mut pipeline = Vec::new();
+
+    for i in 0..num_steps {
+        println!("\nÉtape {} :", i + 1);
+        let algo = ask_algorithm();
+
+        let param = match algo {
+            Algo::Cesar | Algo::Xor => {
+                print!("Clé (entier) : ");
+                io::stdout().flush().unwrap();
+                let mut p = String::new();
+                io::stdin().read_line(&mut p).unwrap();
+                Some(p.trim().to_string())
+            }
+            Algo::Vigenere => {
+                print!("Mot-clé : ");
+                io::stdout().flush().unwrap();
+                let mut p = String::new();
+                io::stdin().read_line(&mut p).unwrap();
+                Some(p.trim().to_string())
+            }
+            _ => None,
+        };
+
+        pipeline.push(MultiEncode { algo, param });
+    }
+
+    pipeline
+}
+
+fn apply_pipeline(pipeline: &[MultiEncode], text: &str) -> String {
+    let mut current = text.to_string();
+
+    for step in pipeline {
+        current = match step.algo {
+            Algo::Cesar => {
+                let key = step.param.as_ref().unwrap().parse::<u8>().unwrap_or(3);
+                caesar_encode(&current, key)
+            }
+            Algo::Xor => {
+                let key = step.param.as_ref().unwrap().parse::<u8>().unwrap_or(3);
+                xor_encode(&current, key)
+            }
+            Algo::Vigenere => {
+                let keyword = step.param.as_ref().unwrap();
+                vigenere_encode(&current, keyword)
+            }
+            Algo::Rot13 => rot13_encode(&current),
+            Algo::Base64 => base64_encode(&current),
+            Algo::Hex => hex_encode(&current),
+            Algo::Atbash => atbash_encode(&current),
+            Algo::Reverse => reverse_encode(&current),
+            Algo::Binary => binary_encode(&current),
+            Algo::Base32 => base32_encode(&current),
+        };
+    }
+
+    current
+}
+
+
 fn ask_keyword() -> String {
     print!("\nEntrez le mot-clé (lettres uniquement) : ");
     io::stdout().flush().unwrap();
@@ -210,3 +274,18 @@ fn ask_keyword() -> String {
     keyword.trim().to_string()
 }
 
+fn get_input_text(source_type: &SourceType) -> String {
+    match source_type {
+        SourceType::Manual => ask_text(),
+        SourceType::File => {
+            let file_path = ask_file_path();
+            match fs::read_to_string(&file_path) {
+                Ok(content) => content.trim().to_string(),
+                Err(_) => {
+                    println!("Erreur lors de la lecture du fichier.");
+                    String::new()
+                }
+            }
+        }
+    }
+}
