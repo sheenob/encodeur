@@ -50,7 +50,17 @@ fn main() {
         (Mode::Encode, Algo::Binary) => binary_encode(&input_text),
         (Mode::Decode, Algo::Binary) => binary_decode(&input_text),
         (Mode::Encode, Algo::Base32) => base32_encode(&input_text),
-        (Mode::Decode, Algo::Base32) => base32_decode(&input_text), 
+        (Mode::Decode, Algo::Base32) => base32_decode(&input_text),
+
+        (Mode::Encode, Algo::Vigenere) => {
+            let keyword = ask_keyword();
+            vigenere_encode(&input_text, &keyword)
+        }
+        (Mode::Decode, Algo::Vigenere) => {
+            let keyword = ask_keyword();
+            vigenere_decode(&input_text, &keyword)
+        }
+        
     };
 
     println!("\nRésultat : {}\n", result);
@@ -90,7 +100,7 @@ fn ask_mode() -> Mode {
 
 fn ask_algorithm() -> Algo {
     println!("\nListe des algorithmes disponibles :");
-    println!("1) César\n2) ROT13\n3) Base64\n4) Hex\n5) Atbash\n6) XOR\n7) Reverse\n8) Binary\n9) Base32");
+    println!("1) César\n2) ROT13\n3) Base64\n4) Hex\n5) Atbash\n6) XOR\n7) Reverse\n8) Binary\n9) Base32\n10) Vigenere");
     print!("Choisissez votre algorithme : ");
     io::stdout().flush().unwrap();
 
@@ -106,6 +116,7 @@ fn ask_algorithm() -> Algo {
         "7" => Algo::Reverse,
         "8" => Algo::Binary,
         "9" => Algo::Base32,
+        "10" => Algo::Vigenere,
         _ => {
             println!("Entrée invalide, défaut sur César.");
             Algo::Cesar
@@ -189,3 +200,13 @@ fn ask_key() -> u8 {
         }
     }
 }
+
+fn ask_keyword() -> String {
+    print!("\nEntrez le mot-clé (lettres uniquement) : ");
+    io::stdout().flush().unwrap();
+
+    let mut keyword = String::new();
+    io::stdin().read_line(&mut keyword).unwrap();
+    keyword.trim().to_string()
+}
+

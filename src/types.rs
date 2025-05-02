@@ -12,6 +12,7 @@ pub enum Algo {
     Reverse,
     Binary,
     Base32,
+    Vigenere
 }
 
 /// Mode d'utilisation : encoder ou décoder.
