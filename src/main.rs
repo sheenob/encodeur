@@ -1,5 +1,6 @@
 use std::fs;
 use std::io::{self, Write};
+use ::base64 as base64_lib;
 
 mod algorithms;
 mod types;
@@ -28,7 +29,8 @@ fn main() {
 fn lancer_encodage_ou_decodage(mode: Mode) {
     let algo = ask_algorithm();
     let source_type = ask_source_type();
-    let input_text = get_input_text(&source_type);
+    let is_binary = ask_file_mode_if_needed(&source_type);
+    let input_text = get_input_text(&source_type, is_binary);
 
     let key = if matches!(algo, Algo::Cesar | Algo::Xor) {
         ask_key()
@@ -79,7 +81,8 @@ fn lancer_encodage_ou_decodage(mode: Mode) {
 fn lancer_pipeline() {
     let pipeline = build_pipeline();
     let source_type = ask_source_type();
-    let input_text = get_input_text(&source_type);
+    let is_binary = ask_file_mode_if_needed(&source_type);
+    let input_text = get_input_text(&source_type, is_binary);
     let result = apply_pipeline(&pipeline, &input_text);
 
     println!("\nRésultat :\n{}", result);
@@ -274,16 +277,37 @@ fn ask_keyword() -> String {
     keyword.trim().to_string()
 }
 
-fn get_input_text(source_type: &SourceType) -> String {
+fn ask_file_mode_if_needed(source_type: &SourceType) -> bool {
+    if let SourceType::File = source_type {
+        print!("Fichier texte (1) ou binaire (2) ? : ");
+        io::stdout().flush().unwrap();
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).unwrap();
+        return input.trim() == "2";
+    }
+    false
+}
+
+fn get_input_text(source_type: &SourceType, binary: bool) -> String {
     match source_type {
         SourceType::Manual => ask_text(),
         SourceType::File => {
             let file_path = ask_file_path();
-            match fs::read_to_string(&file_path) {
-                Ok(content) => content.trim().to_string(),
-                Err(_) => {
-                    println!("Erreur lors de la lecture du fichier.");
-                    String::new()
+            if binary {
+                match fs::read(&file_path) {
+                    Ok(bytes) => base64_lib::encode(&bytes),
+                    Err(_) => {
+                        println!("Erreur lors de la lecture du fichier binaire.");
+                        String::new()
+                    }
+                }
+            } else {
+                match fs::read_to_string(&file_path) {
+                    Ok(content) => content.trim().to_string(),
+                    Err(_) => {
+                        println!("Erreur lors de la lecture du fichier texte.");
+                        String::new()
+                    }
                 }
             }
         }
