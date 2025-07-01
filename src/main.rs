@@ -31,7 +31,8 @@ fn lancer_encodage_ou_decodage(mode: Mode) {
     let algo = ask_algorithm();
     let source_type = ask_source_type();
     let is_binary = ask_file_mode_if_needed(&source_type);
-    let input_text = get_input_text(&source_type, is_binary);
+    let input_text = get_input_text(&source_type, is_binary, mode);
+
 
     let key = if matches!(algo, Algo::Cesar | Algo::Xor) {
         ask_key()
@@ -96,7 +97,7 @@ fn lancer_pipeline() {
     let pipeline = build_pipeline();
     let source_type = ask_source_type();
     let is_binary = ask_file_mode_if_needed(&source_type);
-    let input_text = get_input_text(&source_type, is_binary);
+    let input_text = get_input_text(&source_type, is_binary, Mode::Encode);
     let result = apply_pipeline(&pipeline, &input_text);
 
     println!("\nRésultat :\n{}", result);
@@ -163,34 +164,33 @@ fn ask_text() -> String {
     text.trim().to_string()
 }
 
-fn ask_file_path() -> String {
+    fn ask_file_path(mode: Mode) -> String {
     loop {
-        print!("\nEntrez le chemin du fichier à lire (absolu ou relatif) : ");
+        let dir = match mode {
+            Mode::Encode => "encoder",
+            Mode::Decode => "decoder",
+        };
+        print!("\nEntrez le nom du fichier (dans le dossier {}): ", dir);
         io::stdout().flush().unwrap();
 
         let mut path = String::new();
         io::stdin().read_line(&mut path).unwrap();
         let trimmed_path = path.trim();
 
-        // Essayer d'abord le chemin tel quel
-        if std::path::Path::new(trimmed_path).exists() {
-            return trimmed_path.to_string();
+        let file_path = format!("{}/{}", dir, trimmed_path);
+
+        if std::path::Path::new(&file_path).exists() {
+            return file_path;
+        } else {
+            println!("Erreur : le fichier '{}' n'existe pas dans le dossier '{}'.", trimmed_path, dir);
         }
-        
-        // Ensuite essayer dans file_input/
-        let file_input_path = format!("file_input/{}", trimmed_path);
-        if std::path::Path::new(&file_input_path).exists() {
-            return file_input_path;
-        }
-        
-        println!("Erreur : le fichier '{}' n'existe pas.", trimmed_path);
-        println!("Vérifiez le chemin ou placez le fichier dans le dossier 'file_input/'.");
     }
 }
 
+
 fn ask_output_file_path() -> String {
     loop {
-        print!("\nEntrez le nom du fichier de sortie (sera enregistré dans le dossier 'file_output/') : ");
+        print!("\nEntrez le nom du fichier de sortie (sera enregistré dans le dossier 'output/') : ");
         io::stdout().flush().unwrap();
 
         let mut file_name = String::new();
@@ -198,7 +198,7 @@ fn ask_output_file_path() -> String {
         let trimmed_name = file_name.trim();
 
         if !trimmed_name.is_empty() {
-            return format!("file_output/{}", trimmed_name);
+            return format!("output/{}", trimmed_name);
         } else {
             println!("Erreur : le nom du fichier ne peut pas être vide.");
         }
@@ -309,11 +309,11 @@ fn ask_file_mode_if_needed(source_type: &SourceType) -> bool {
     false
 }
 
-fn get_input_text(source_type: &SourceType, binary: bool) -> String {
+fn get_input_text(source_type: &SourceType, binary: bool, mode: Mode) -> String {
     match source_type {
         SourceType::Manual => ask_text(),
         SourceType::File => {
-            let file_path = ask_file_path();
+            let file_path = ask_file_path(mode);
             if binary {
                 match fs::read(&file_path) {
                     Ok(bytes) => base64_lib::engine::general_purpose::STANDARD.encode(&bytes),
