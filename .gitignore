@@ -2,8 +2,9 @@
 /target/
 
 # Fichiers à chiffrer
-/file_output/
-/file_input/
+/encoder/
+/decoder/
+/output/
 
 # Fichiers de logs Cargo
 **/*.rs.bk
@@ -22,3 +23,4 @@ Cargo.lock
 
 # Windows
 Thumbs.db
+
