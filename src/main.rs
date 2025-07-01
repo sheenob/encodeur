@@ -1,6 +1,7 @@
 use std::fs;
 use std::io::{self, Write};
 use ::base64 as base64_lib;
+use base64_lib::engine::Engine; // Import the Engine trait for encode()
 
 mod algorithms;
 mod types;
@@ -11,7 +12,7 @@ fn main() {
     println!("===== Encodeur/Décodeur Rust =====\n");
     println!("1) Encodage simple");
     println!("2) Décodage simple");
-    println!("3) Encodage pipeline personnalisé");
+    println!("3) Encodage multiple personnalisé");
     print!("Choisissez une option : ");
     io::stdout().flush().unwrap();
 
@@ -67,8 +68,18 @@ fn lancer_encodage_ou_decodage(mode: Mode) {
         }
     };
 
-    if is_binary || matches!(source_type, SourceType::File) {
-        println!("\nRésultat : {}\n", result);
+    // Affichage du résultat selon le type de source
+    match source_type {
+        SourceType::Manual => {
+            println!("\nRésultat : {}\n", result);
+        }
+        SourceType::File => {
+            if is_binary {
+                println!("\nRésultat (base64) : {}\n", result);
+            } else {
+                println!("\nRésultat : {}\n", result);
+            }
+        }
     }
 
     if let SourceType::File = source_type {
@@ -154,19 +165,26 @@ fn ask_text() -> String {
 
 fn ask_file_path() -> String {
     loop {
-        print!("\nEntrez le chemin du fichier à lire (doit être dans le dossier 'file_input/') : ");
+        print!("\nEntrez le chemin du fichier à lire (absolu ou relatif) : ");
         io::stdout().flush().unwrap();
 
         let mut path = String::new();
         io::stdin().read_line(&mut path).unwrap();
         let trimmed_path = path.trim();
 
-        let full_path = format!("file_input/{}", trimmed_path);
-        if std::path::Path::new(&full_path).exists() {
-            return full_path;
-        } else {
-            println!("Erreur : le fichier '{}' n'existe pas dans le dossier 'file_input/'.", trimmed_path);
+        // Essayer d'abord le chemin tel quel
+        if std::path::Path::new(trimmed_path).exists() {
+            return trimmed_path.to_string();
         }
+        
+        // Ensuite essayer dans file_input/
+        let file_input_path = format!("file_input/{}", trimmed_path);
+        if std::path::Path::new(&file_input_path).exists() {
+            return file_input_path;
+        }
+        
+        println!("Erreur : le fichier '{}' n'existe pas.", trimmed_path);
+        println!("Vérifiez le chemin ou placez le fichier dans le dossier 'file_input/'.");
     }
 }
 
@@ -298,7 +316,7 @@ fn get_input_text(source_type: &SourceType, binary: bool) -> String {
             let file_path = ask_file_path();
             if binary {
                 match fs::read(&file_path) {
-                    Ok(bytes) => base64_lib::encode(&bytes),
+                    Ok(bytes) => base64_lib::engine::general_purpose::STANDARD.encode(&bytes),
                     Err(_) => {
                         println!("Erreur lors de la lecture du fichier binaire.");
                         String::new()
